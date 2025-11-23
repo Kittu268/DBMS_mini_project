@@ -1,0 +1,9 @@
+2025-11-19 22:34:58 | admin | -- Type SQL here, e.g. SELECT * FROM reservation LIMIT 50;
+2025-11-19 22:38:25 | admin | SELECT * FROM `airplane_type` LIMIT 50;
+2025-11-19 22:38:34 | admin | SELECT * FROM `fare` LIMIT 50;
+2025-11-19 22:38:52 | admin | SELECT * FROM `seat_class` LIMIT 50;
+2025-11-19 22:38:56 | admin | SELECT * FROM `seat_class` LIMIT 50;
+2025-11-19 22:39:02 | admin | SELECT * FROM `airplane` LIMIT 50;
+2025-11-19 22:39:09 | admin | SELECT * FROM `users` LIMIT 50;
+2025-11-19 22:39:37 | admin | select * from users;
+2025-11-19 22:39:38 | admin | select * from users;

@@ -1,0 +1,266 @@
+/* ==========================================================================
+   SQL WORKBENCH — Full Upgraded Styles
+   ========================================================================== */
+
+/* Layout wrapper */
+.sql-wrap {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 1200px) {
+    .sql-wrap {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================================================
+   SCHEMA SIDEBAR
+   ========================================================================== */
+
+.schema-box {
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+.schema-item {
+    padding: 10px 12px;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+}
+.schema-item:hover {
+    background: #eef1ff;
+    transform: translateX(6px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+.schema-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+.schema-cols span {
+    margin-right: 6px;
+    background: #f0f3ff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+/* ==========================================================================
+   EDITOR / TABS
+   ========================================================================== */
+
+.tabs-bar,
+#tabsBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.tab {
+    background: #eef2ff;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    border: 1px solid rgba(13,71,161,0.08);
+    transition: 0.15s ease;
+    position: relative;
+}
+.tab:hover {
+    background: #e0e6ff;
+}
+.tab.active {
+    background: linear-gradient(90deg,#6366f1,#764ba2);
+    color: white;
+    box-shadow: 0 6px 18px rgba(99,102,241,0.18);
+}
+
+/* Close “X” */
+.tab .closeX {
+    font-weight: bold;
+    margin-left: 10px;
+    color: rgba(255,255,255,0.8);
+}
+.tab:not(.active) .closeX {
+    color: #555;
+}
+
+/* New Tab button */
+.tab.add {
+    background: #e6e6e6;
+    font-weight: 700;
+}
+.tab.add:hover {
+    background: #dcdcdc;
+}
+
+/* Editor styles */
+.sql-editor-wrap {
+    width: 100%;
+    height: 260px;
+}
+.CodeMirror {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    border: 1px solid #dfe3ee;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* ==========================================================================
+   RESULT BLOCKS
+   ========================================================================== */
+
+.results-box {
+    margin-top: 15px;
+    padding: 12px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.result-block {
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 15px;
+    background: #f8faff;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+}
+
+.result-head {
+    font-size: 15px;
+    font-weight: 600;
+    color: #4c4fc5;
+    margin-bottom: 6px;
+}
+
+.result-block table {
+    background: #fff;
+    border-radius: 10px;
+}
+
+.result-block th {
+    background: #ecefff;
+    font-weight: 600;
+}
+
+.result-block td {
+    font-size: 13px;
+}
+
+/* ==========================================================================
+   AI ASSISTANT PANEL
+   ========================================================================== */
+
+.ai-box {
+    margin-top: 20px;
+    background: #ffffff;
+    padding: 14px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+}
+
+.ai-box textarea {
+    width: 100%;
+    height: 80px;
+    border-radius: 10px;
+    border: 1px solid #d3d8e8;
+    padding: 10px;
+}
+
+.ai-box button {
+    margin-top: 8px;
+}
+
+/* ==========================================================================
+   ERD Diagram
+   ========================================================================== */
+
+#erdCanvas {
+    width: 100%;
+    height: 600px;
+    border: 1px solid #d6d6d6;
+    border-radius: 12px;
+    background: #fafbff;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.06);
+}
+
+/* ==========================================================================
+   HISTORY
+   ========================================================================== */
+
+.history-item {
+    padding: 10px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.04);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: 0.1s ease;
+}
+.history-item:hover {
+    background: #f3f5ff;
+    transform: translateX(4px);
+}
+.history-sql {
+    font-family: monospace;
+    font-size: 13px;
+    margin-top: 4px;
+    white-space: pre-wrap;
+}
+
+/* ==========================================================================
+   UTILITY
+   ========================================================================== */
+
+.small-muted {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.btn-sm {
+    border-radius: 8px !important;
+}
+#aiStatus {
+    transition: 0.2s ease;
+}
+
+#aiStatus.ai-online {
+    background:#22c55e !important;  /* green */
+    color:white;
+}
+
+#aiStatus.ai-offline {
+    background:#ef4444 !important;  /* red */
+    color:white;
+}
+
+#aiStatus.ai-loading {
+    background:#6b7280 !important;  /* gray */
+    color:white;
+}
+.schema-box {
+    width: 330px !important;
+    max-width: 330px !important;
+    overflow-y: auto;
+    padding-right: 10px;
+    z-index: 2;
+}
+
+#erdWrapper {
+    background: #fff;
+    z-index: 1;
+}
+
+

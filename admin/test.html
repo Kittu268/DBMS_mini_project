@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SQL AI Assistant Tester</title>
+    <meta charset="UTF-8" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f3f3;
+            padding: 20px;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-top: 5px;
+        }
+        button:hover {
+            background: #0056d2;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            border-radius: 6px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+        pre {
+            background: #222;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 6px;
+            max-height: 400px;
+            overflow: auto;
+        }
+        select { padding: 6px; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+<h2>🧪 SQL AI Assistant Tester</h2>
+
+<div class="box">
+    <h3>1️⃣ Test Model Selection</h3>
+    <button onclick="sendTask('test_model')">Run test_model</button>
+</div>
+
+<div class="box">
+    <h3>2️⃣ Generate SQL From Natural Language</h3>
+    <textarea id="nl_query" placeholder="Describe your SQL here..."></textarea>
+    <button onclick="generateSQL()">Generate SQL</button>
+</div>
+
+<div class="box">
+    <h3>3️⃣ Autofix Broken SQL</h3>
+    <textarea id="bad_sql" placeholder="Paste invalid SQL here..."></textarea>
+    <button onclick="autofixSQL()">Auto Fix SQL</button>
+</div>
+
+<div class="box">
+    <h3>4️⃣ Validate SQL (no AI)</h3>
+    <textarea id="validate_sql" placeholder="Enter SQL to validate..."></textarea>
+    <button onclick="validateSQL()">Validate SQL</button>
+</div>
+
+<div class="box">
+    <h3>5️⃣ Generate Test Data</h3>
+    <input id="table_name" placeholder="Table name..." />
+    <input id="count_num" placeholder="Count (default 3)" value="3" style="width:80px"/>
+    <button onclick="generateTestData()">Generate Test Data</button>
+</div>
+
+<div class="box">
+    <h3>6️⃣ Insert Template / Example</h3>
+    <input id="table_ins" placeholder="Table name..." />
+    <button onclick="templateInsert()">Template</button>
+    <button onclick="exampleInsert()">Example</button>
+</div>
+
+<div class="box">
+    <h3>Result</h3>
+    <pre id="result">Waiting...</pre>
+</div>
+
+<script>
+function api(body) {
+    return fetch("sql_ai_assistant.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    }).then(r => r.json());
+}
+
+function print(x) {
+    document.getElementById("result").innerText = JSON.stringify(x, null, 2);
+}
+
+function sendTask(task) {
+    api({ task }).then(print);
+}
+
+function generateSQL() {
+    const query = document.getElementById("nl_query").value;
+    api({ task: "sql", query }).then(print);
+}
+
+function autofixSQL() {
+    const query = document.getElementById("bad_sql").value;
+    api({ task: "autofix", query }).then(print);
+}
+
+function validateSQL() {
+    const query = document.getElementById("validate_sql").value;
+    api({ task: "validate", query }).then(print);
+}
+
+function generateTestData() {
+    const table = document.getElementById("table_name").value;
+    const count = parseInt(document.getElementById("count_num").value);
+    api({ task: "generate_test_data", table, count }).then(print);
+}
+
+function templateInsert() {
+    const table = document.getElementById("table_ins").value;
+    api({ task: "insert_template", table }).then(print);
+}
+
+function exampleInsert() {
+    const table = document.getElementById("table_ins").value;
+    api({ task: "insert_example", table }).then(print);
+}
+</script>
+
+</body>
+</html>

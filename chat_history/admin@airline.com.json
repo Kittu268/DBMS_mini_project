@@ -1,0 +1,27 @@
+[
+    {
+        "time": 1763544382,
+        "role": "user",
+        "text": "hi"
+    },
+    {
+        "time": 1763544395,
+        "role": "user",
+        "text": "what'"
+    },
+    {
+        "time": 1763544421,
+        "role": "user",
+        "text": "bye"
+    },
+    {
+        "time": 1763648140,
+        "role": "user",
+        "text": "book"
+    },
+    {
+        "time": 1763648140,
+        "role": "assistant",
+        "text": "Suggested alternate dates for 6E404."
+    }
+]

@@ -1,0 +1,189 @@
+/*
+ * ======================================
+ * GLOBAL STYLES - MODERN FLIGHT THEME
+ * (Linked in header.php for all pages)
+ * ======================================
+ */
+
+/* =======================
+   Global Body
+======================= */
+body {
+    padding-top: 110px !important; /* Prevent content from hiding behind navbar */
+    font-family: 'Poppins', sans-serif;
+    overflow-x: hidden;
+}
+
+body, html {
+    /* Ensure full page coverage for gradients */
+    min-height: 100vh;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    
+    /* User's Gradient */
+    background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    position: relative;
+    background-attachment: fixed;
+}
+
+/* =======================
+   Navbar Links
+======================= */
+.nav-link:hover {
+    background-color: #0d6efd;
+    color: #fff !important;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+/* =======================
+   Cards & Content Containers
+======================= */
+.card, .glass-box {
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    transition: 0.3s;
+    border: none;
+    /* Use semi-transparent white for a clean, frosted look */
+    background-color: rgba(255, 255, 255, 0.95);
+}
+.card:hover {
+    transform: translateY(-3px);
+}
+
+/* =======================
+   CRUD Panel Headings
+======================= */
+.crud-panel h4 {
+    margin-right: 15px;
+    color: #333;
+    font-weight: 600;
+}
+
+/* =======================
+   Tables
+======================= */
+.table {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.table th {
+    /* Uses the primary gradient for headers */
+    background: linear-gradient(to right, #667eea, #764ba2);
+    color: white;
+    vertical-align: middle;
+}
+.table tr:nth-child(even) {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+/* =======================
+   Buttons (Primary CTA)
+======================= */
+.btn-primary, .btn-primary-cta {
+    background: linear-gradient(to right, #667eea, #764ba2);
+    border: none;
+    color: white;
+    transition: 0.3s;
+    font-weight: 600;
+    border-radius: 8px;
+}
+.btn-primary:hover, .btn-primary-cta:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 10px rgba(118, 75, 162, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(to right, #43e97b, #38f9d7);
+    border: none;
+    color: white;
+    transition: 0.3s;
+    font-weight: 600;
+    border-radius: 8px;
+}
+.btn-success:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 10px rgba(56, 249, 215, 0.4);
+}
+
+/* =======================
+   Chat Container
+======================= */
+.chat-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    height: 70vh;
+}
+.chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.assistant-message {
+    background: linear-gradient(to right, #e0eafc, #cfdef3);
+    color: #333;
+    border-radius: 15px 15px 15px 0;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    max-width: 80%;
+}
+
+.user-message {
+    background: linear-gradient(to right, #667eea, #764ba2);
+    color: white;
+    border-radius: 15px 15px 0 15px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    max-width: 80%;
+    margin-left: auto;
+}
+
+/* =======================
+   Animated Airplane (Background Element)
+======================= */
+.airplane {
+    position: fixed;
+    width: 80px;
+    top: 20%;
+    left: -100px; /* Start off-screen */
+    z-index: 1000;
+    animation: fly 15s linear infinite;
+}
+
+@keyframes fly {
+    0% {
+        transform: translateX(0) rotate(0deg);
+    }
+    50% {
+        transform: translateX(120vw) rotate(15deg); /* Fly across the screen */
+    }
+    100% {
+        transform: translateX(-10vw) rotate(0deg); /* Loop back */
+    }
+}
+/* Transparent dropdowns for admin page */
+.transparent-select {
+    background: transparent; /* Slight white transparency */
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: transparent;            /* Text visible on transparent bg */
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* Options inside dropdown: readable */
+.transparent-select option {
+    color: #000;        /* Black text inside dropdown list */
+    background: #fff;   /* Normal dropdown background */
+}

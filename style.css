@@ -1,0 +1,279 @@
+/* ===========================================================
+   GLOBAL BODY
+=========================================================== */
+body {
+  background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  overflow-x: hidden;
+}
+
+/* ===========================================================
+   NAVBAR LINK HOVER
+=========================================================== */
+.nav-link:hover {
+  background-color: #0d6efd;
+  color: #fff !important;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+/* ===========================================================
+   CARDS
+=========================================================== */
+.card {
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  transition: 0.3s;
+  position: relative;
+  z-index: 5;
+}
+.card:hover {
+  transform: translateY(-3px);
+}
+
+/* ===========================================================
+   TABLES
+=========================================================== */
+.table {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.table th {
+  background: #667eea;
+  color: white;
+}
+.table tr:nth-child(even) {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+/* ===========================================================
+   BUTTONS
+=========================================================== */
+.btn-primary {
+  background: linear-gradient(to right, #667eea, #764ba2);
+  border: none;
+  color: white;
+  transition: 0.3s;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-success {
+  background: linear-gradient(to right, #43e97b, #38f9d7);
+  border: none;
+  color: white;
+  transition: 0.3s;
+}
+.btn-success:hover {
+  opacity: 0.9;
+}
+
+/* ===========================================================
+   CHAT UI (WORKING)
+=========================================================== */
+.chat-container {
+  position: relative;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+  width: 100%;
+  overflow: hidden;
+  padding: 15px;
+  border: 1px solid rgba(255,255,255,0.2);
+  z-index: 5;
+}
+
+/* ===========================================================
+   CHAT BACKGROUND (CLOUD + SMALL PLANE)
+=========================================================== */
+.chat-container::before {
+  content: "";
+  background: url("images/cloud.png") repeat-x,
+              url("images/airplane.png") no-repeat;
+  background-size: 400px, 160px;
+  background-position: 0 40%, right 70%;
+  opacity: 0.25;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  animation: moveCloudsChat 120s linear infinite;
+}
+
+@keyframes moveCloudsChat {
+  from { background-position: 0 40%, right 70%; }
+  to   { background-position: 2000px 40%, right 70%; }
+}
+
+/* ===========================================================
+   CHAT MESSAGES
+=========================================================== */
+.assistant-message,
+.user-message {
+  position: relative;
+  z-index: 1;
+  border-radius: 15px;
+  padding: 10px 15px;
+  margin: 10px;
+  max-width: 80%;
+  word-wrap: break-word;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.assistant-message {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #0d47a1;
+  align-self: flex-start;
+}
+
+.user-message {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+/* ===========================================================
+   FULL CINEMATIC SKY BACKGROUND (FOR LOGIN + FORGOT + ADMIN)
+=========================================================== */
+.sky-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* CLOUD LAYER (HIGH QUALITY) */
+.cloud-bg {
+  position: absolute;
+  width: 180vw;
+  top: 25vh;
+  left: -80vw;
+  opacity: 0.9;
+  animation: cloudMove 55s linear infinite;
+  z-index: 2;
+  filter: blur(2px);
+}
+
+/* PLANE INSIDE CLOUD */
+.plane-bg {
+  position: absolute;
+  width: 220px;
+  top: 32vh;
+  left: -300px;
+  opacity: 0;
+  z-index: 1;
+  animation: planeFly 55s linear infinite;
+}
+
+/* CLOUD MOTION */
+@keyframes cloudMove {
+  from { transform: translateX(0); }
+  to   { transform: translateX(200vw); }
+}
+
+/* PLANE MOTION */
+@keyframes planeFly {
+  0%   { opacity: 0; transform: translateX(0); }
+  15%  { opacity: 1; transform: translateX(400px); }
+  33%  { opacity: 0.5; transform: translateX(850px); }
+  50%  { opacity: 1; transform: translateX(1200px); }
+  100% { opacity: 0; transform: translateX(2500px); }
+}
+
+/* ===========================================================
+   PERFORMANCE BOOST
+=========================================================== */
+.cloud-bg, .plane-bg {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+/* --- Seat Layout Styling (Improved) --- */
+
+.seat {
+    padding: 10px 12px;
+    margin: 6px;
+    min-width: 48px;
+    text-align: center;
+
+    border-radius: 10px;
+    border: 2px solid #cbd5e1;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+    user-select: none;
+
+    transition: all 0.25s ease;
+}
+
+/* Available seat */
+.seat.available {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.seat.available:hover {
+    background: #e2e8f0;        /* Slightly darker on hover */
+    border-color: #64748b;
+    transform: translateY(-3px); /* Move slightly up */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Booked seat - strong red tone */
+.seat.booked {
+    background: #dc2626;
+    color: #fff;
+    border-color: #b91c1c;
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+.seat.booked:hover {
+    transform: none;
+    box-shadow: none;
+    opacity: 1;     /* Slight highlight on hover */
+}
+
+/* Selected seat - premium green */
+.seat.selected {
+    background: #10b981;
+    color: #fff;
+    border-color: #059669;
+    box-shadow: 0 4px 16px rgba(16,185,129,0.45);
+    transform: translateY(-3px) scale(1.05);
+}
+
+/* Header seats (Row/Col labels) */
+.seat.header {
+    background: transparent !important;
+    border: none !important;
+    font-weight: 700;
+    color: #1e293b;
+    cursor: default;
+}
+
+/* Row wrapper */
+.seat-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+    gap: 10px;
+    flex-wrap: wrap;
+}

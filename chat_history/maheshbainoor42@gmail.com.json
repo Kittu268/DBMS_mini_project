@@ -1,0 +1,47 @@
+[
+    {
+        "time": 1763577489,
+        "role": "user",
+        "text": "my bookings"
+    },
+    {
+        "time": 1763577489,
+        "role": "assistant",
+        "text": "Displayed your reservations."
+    },
+    {
+        "time": 1763577510,
+        "role": "user",
+        "text": "book a reservations"
+    },
+    {
+        "time": 1763577510,
+        "role": "assistant",
+        "text": "Suggested alternate dates for 6E404."
+    },
+    {
+        "time": 1763638417,
+        "role": "user",
+        "text": "HI"
+    },
+    {
+        "time": 1763638433,
+        "role": "user",
+        "text": "HOW TO BOOK'"
+    },
+    {
+        "time": 1763638433,
+        "role": "assistant",
+        "text": "Suggested alternate dates for 6E404."
+    },
+    {
+        "time": 1763638451,
+        "role": "user",
+        "text": "WHAT IS THIS"
+    },
+    {
+        "time": 1763638451,
+        "role": "assistant",
+        "text": "Asked for clarification."
+    }
+]
