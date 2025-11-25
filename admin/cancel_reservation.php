@@ -15,12 +15,17 @@ if (!$flight || !$leg || !$date || !$seat) {
 }
 
 /* ---------------------------------------------------------
-   1) Fetch reservation details
+   1) Fetch reservation details + departure_time from leg_instance
 --------------------------------------------------------- */
 $stmt = $conn->prepare("
-    SELECT reservation_id, fare, cancellation_status, Airplane_id
-    FROM reservation
-    WHERE Flight_number=? AND Leg_no=? AND Date=? AND Seat_no=?
+    SELECT r.reservation_id, r.fare, r.cancellation_status, r.Airplane_id,
+           li.Departure_time
+    FROM reservation r
+    JOIN leg_instance li
+        ON li.Flight_number = r.Flight_number
+       AND li.Leg_no = r.Leg_no
+       AND li.Date = r.Date
+    WHERE r.Flight_number=? AND r.Leg_no=? AND r.Date=? AND r.Seat_no=?
     LIMIT 1
 ");
 $stmt->bind_param("siss", $flight, $leg, $date, $seat);
@@ -32,10 +37,11 @@ if ($res->num_rows === 0) {
 }
 
 $row  = $res->fetch_assoc();
-$resId = $row['reservation_id'];
-$fare  = $row['fare'] ?? 0;
-$status = $row['cancellation_status'];
-$airplaneId = $row['Airplane_id'];
+$resId       = $row['reservation_id'];
+$fare        = (float)$row['fare'];
+$status      = $row['cancellation_status'];
+$airplaneId  = $row['Airplane_id'];
+$depTime     = $row['Departure_time']; // NOW WE HAVE IT
 
 if ($status === "cancelled") {
     header("Location: reservations.php?msg=already_cancelled");
@@ -43,7 +49,23 @@ if ($status === "cancelled") {
 }
 
 /* ---------------------------------------------------------
-   2) Mark reservation as CANCELLED
+   2) Calculate refund based on HOURS 
+--------------------------------------------------------- */
+$current = new DateTime();  
+$travelDateTime = new DateTime("$date $depTime");
+
+$diffHours = (int) round(($travelDateTime->getTimestamp() - $current->getTimestamp()) / 3600);
+if ($diffHours < 0) $diffHours = 0;
+
+if ($diffHours >= 48)       $refundPct = 100;
+else if ($diffHours >= 12) $refundPct = 50;
+else if ($diffHours >= 3)  $refundPct = 20;
+else                       $refundPct = 0;
+
+$refundAmount = ($fare * $refundPct) / 100;
+
+/* ---------------------------------------------------------
+   3) Mark reservation as CANCELLED
 --------------------------------------------------------- */
 $stmt2 = $conn->prepare("
     UPDATE reservation
@@ -54,27 +76,38 @@ $stmt2->bind_param("i", $resId);
 $stmt2->execute();
 
 /* ---------------------------------------------------------
-   3) Free the seat (correct for your DB structure)
+   4) Increase seat availability back in leg_instance
 --------------------------------------------------------- */
 $stmt3 = $conn->prepare("
-    DELETE FROM seat
-    WHERE Airplane_id=? AND Seat_no=?
+    UPDATE leg_instance
+    SET Number_of_available_seats = Number_of_available_seats + 1
+    WHERE Flight_number=? AND Leg_no=? AND Date=?
 ");
-$stmt3->bind_param("ss", $airplaneId, $seat);
+$stmt3->bind_param("sis", $flight, $leg, $date);
 $stmt3->execute();
 
 /* ---------------------------------------------------------
-   4) Add refund transaction
+   5) Log cancellation
 --------------------------------------------------------- */
 $stmt4 = $conn->prepare("
-    INSERT INTO revenue_log (reservation_id, amount, type)
-    VALUES (?, ?, 'refund')
+    INSERT INTO cancellations (reservation_id, refund_amount, refund_pct, hours_left)
+    VALUES (?, ?, ?, ?)
 ");
-$stmt4->bind_param("id", $resId, $fare);
+$stmt4->bind_param("idii", $resId, $refundAmount, $refundPct, $diffHours);
 $stmt4->execute();
 
 /* ---------------------------------------------------------
-   5) Redirect to admin page
+   6) Revenue log
+--------------------------------------------------------- */
+$stmt5 = $conn->prepare("
+    INSERT INTO revenue_log (reservation_id, amount, type)
+    VALUES (?, ?, 'refund')
+");
+$stmt5->bind_param("id", $resId, $refundAmount);
+$stmt5->execute();
+
+/* ---------------------------------------------------------
+   7) Redirect
 --------------------------------------------------------- */
 header("Location: reservations.php?msg=cancel_success");
 exit;

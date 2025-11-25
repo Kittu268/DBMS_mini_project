@@ -94,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST['action'] === 'delete_record'
       position: absolute;
       width: 200%;
       height: 100%;
-      background: url('images/cloud.png') repeat-x;
+      /* background: url('images/cloud.png') repeat-x; */
       background-size: contain;
       opacity: 0.45;
       top: 0;
@@ -106,10 +106,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST['action'] === 'delete_record'
     .cloud-layer:nth-child(2) { animation-duration: 190s; top: 40%; opacity: 0.5; }
     .cloud-layer:nth-child(3) { animation-duration: 220s; top: 75%; opacity: 0.4; }
 
-    @keyframes moveClouds {
+    /* @keyframes moveClouds {
       from { background-position-x: 0; }
       to { background-position-x: 10000px; }
-    }
+    } */
 
     /* ✈️ Airplane Animation */
     .plane {
@@ -123,11 +123,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST['action'] === 'delete_record'
       animation: flyInsideClouds 5555s ease-in-out infinite;
     }
 
-    @keyframes flyInsideClouds {
+    /* @keyframes flyInsideClouds {
       0% { transform: translate(0, 0) rotate(6deg); }
       50% { transform: translate(110vw, -6vh) rotate(-4deg); }
       100% { transform: translate(-200px, 3vh) rotate(6deg); }
-    }
+    } */
 
     /* 💎 Glass CRUD Section */
     .glass-box {
@@ -167,7 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST['action'] === 'delete_record'
   <div class="cloud-layer"></div>
   <div class="cloud-layer"></div>
   <div class="cloud-layer"></div>
-  <img src="images/airplane.png" alt="plane" class="plane">
+  <!-- <img src="images/airplane.png" alt="plane" class="plane"> -->
 
   <div class="glass-box">
     <h2>📊 Manage All Tables</h2>

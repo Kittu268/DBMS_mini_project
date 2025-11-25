@@ -1,150 +1,210 @@
 <?php
-// payment.php — show fare & start payment
+// payment.php — FINAL CLEAN VERSION (correct fare logic + optimized)
+
 if (session_status() === PHP_SESSION_NONE) session_start();
-require_once __DIR__ . '/db.php'; // must set $conn (mysqli)
+require_once __DIR__ . '/db.php';
 
-function e($v){ return htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8'); }
-function fmt_currency($amt, $symbol='₹'){ return $symbol . number_format((float)$amt,2); }
+function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+function money($v){ return "₹" . number_format((float)$v, 2); }
 
-// require flight
-if (!isset($_GET['flight_number'])) {
-    echo "<script>alert('Flight not specified'); window.location='index.php';</script>";
+if (!isset($_SESSION['email'])) {
+    header("Location: login.php");
     exit;
 }
-$flight = $_GET['flight_number'];
+
+$email = $_SESSION['email'];
+
+// Required GET params
+$flight = $_GET['flight_number'] ?? null;
 $date   = $_GET['date'] ?? null;
-$leg    = isset($_GET['leg']) ? intval($_GET['leg']) : null;
+$leg    = isset($_GET['leg']) ? (int)$_GET['leg'] : null;
 $seat   = $_GET['seat'] ?? null;
 
-$email = $_SESSION['email'] ?? null;
-if (!$email) {
-    echo "<script>alert('Please login to make payment'); window.location='login.php';</script>";
-    exit;
+if (!$flight) {
+    die("Flight not specified.");
 }
 
-// Attempt to find matching reservation for this user (strongest match: flight+leg+date+seat+email)
-$reservation = null;
+// -------------------
+// Find reservation
+// -------------------
+$res = null;
+
 if ($flight && $date && $leg && $seat) {
-    $q = $conn->prepare("SELECT * FROM reservation WHERE Flight_number=? AND Leg_no=? AND Date=? AND Seat_no=? AND Email=? LIMIT 1");
+    $q = $conn->prepare("
+        SELECT *
+        FROM reservation
+        WHERE Flight_number=? AND Leg_no=? AND Date=? AND Seat_no=? AND Email=?
+        LIMIT 1
+    ");
     $q->bind_param("sisss", $flight, $leg, $date, $seat, $email);
     $q->execute();
-    $reservation = $q->get_result()->fetch_assoc();
+    $res = $q->get_result()->fetch_assoc();
     $q->close();
 }
 
-// If not found, try fallback: last unpaid reservation by this user for that flight
-if (!$reservation) {
-    $q = $conn->prepare("SELECT * FROM reservation WHERE Flight_number=? AND Email=? ORDER BY reservation_created_at DESC LIMIT 1");
+// fallback: latest reservation by user for this flight
+if (!$res) {
+    $q = $conn->prepare("
+        SELECT *
+        FROM reservation
+        WHERE Flight_number=? AND Email=?
+        ORDER BY reservation_id DESC
+        LIMIT 1
+    ");
     $q->bind_param("ss", $flight, $email);
     $q->execute();
-    $reservation = $q->get_result()->fetch_assoc();
+    $res = $q->get_result()->fetch_assoc();
     $q->close();
 }
 
-// If still not found, show error and option to go back to booking
-if (!$reservation) {
-    echo "<!doctype html><html><head><meta charset='utf-8'><title>Payment</title></head><body style='font-family:Inter,Arial,Helvetica'>
-        <div style='max-width:760px;margin:60px auto;padding:20px;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.06)'>
-        <h3>Invalid reservation</h3>
-        <p>No matching reservation was found for your account. Please make a reservation first.</p>
-        <a href='make_reservation.php' class='btn' style='display:inline-block;padding:8px 12px;background:#1e88e5;color:#fff;border-radius:6px;text-decoration:none'>Make Reservation</a>
-        </div></body></html>";
-    exit;
+if (!$res) {
+    die("<h2>No reservation found for this flight.</h2>");
 }
 
-// Use reservation values (authoritative)
-$res_id = $reservation['reservation_id'];
-$leg_no = $reservation['Leg_no'];
-$date   = $reservation['Date'];
-$seat_no= $reservation['Seat_no'];
-$airplane_id = $reservation['Airplane_id'];
+$res_id     = $res['reservation_id'];
+$leg_no     = $res['Leg_no'];
+$travel_date= $res['Date'];
+$seat_no    = $res['Seat_no'];
+$airplane_id= $res['Airplane_id'];
 
-// Fare lookup — helper uses dynamic_fare -> fare -> flight_price fallbacks
-function get_final_fare_for($conn, $flight, $travel_date) {
-    // dynamic_fare
-    if ($stmt = $conn->prepare("
-        SELECT df.final_fare, df.base_fare, df.demand_factor, sc.class_name
-        FROM dynamic_fare df
-        LEFT JOIN seat_class sc ON df.seat_class = sc.class_id
-        WHERE df.flight_number=? AND df.travel_date=? LIMIT 1
-    ")) {
-        $stmt->bind_param("ss", $flight, $travel_date);
-        $stmt->execute();
-        $r = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-        if ($r) {
-            $amt = $r['final_fare'] ?: $r['base_fare'];
-            return ['amount'=> (float)$amt, 'class'=>($r['class_name'] ?? 'Economy'), 'factor'=>($r['demand_factor'] ?? 1), 'source'=>'dynamic'];
-        }
-    }
-    // fare table
-    if ($stmt = $conn->prepare("SELECT base_fare FROM fare WHERE flight_number=? ORDER BY fare_id LIMIT 1")) {
-        $stmt->bind_param("s", $flight);
-        $stmt->execute();
-        $r = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-        if ($r) return ['amount'=> (float)$r['base_fare'], 'class'=>'Economy','factor'=>1,'source'=>'fare'];
-    }
-    // flight_price
-    if ($stmt = $conn->prepare("SELECT price FROM flight_price WHERE Flight_number=? LIMIT 1")) {
-        $stmt->bind_param("s", $flight);
-        $stmt->execute();
-        $r = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-        if ($r) return ['amount'=> (float)$r['price'],'class'=>'Economy','factor'=>1,'source'=>'flight_price'];
-    }
-    return null;
+// -----------------------------------------------------------------
+// GET SEAT CLASS FOR THIS SPECIFIC SEAT (VERY IMPORTANT)
+// -----------------------------------------------------------------
+$seat_class_id = 1;  // default
+$q = $conn->prepare("
+    SELECT Seat_class_id 
+    FROM seat 
+    WHERE Airplane_id=? AND Seat_no=?
+");
+$q->bind_param("ss", $airplane_id, $seat_no);
+$q->execute();
+$r = $q->get_result()->fetch_assoc();
+$q->close();
+
+if ($r && $r['Seat_class_id']) {
+    $seat_class_id = (int)$r['Seat_class_id'];
 }
 
-$fare_info = get_final_fare_for($conn, $flight, $date);
-$default_amount = 2500.00;
-$final_amount = ($fare_info['amount'] ?? $default_amount);
-$seat_class = ($fare_info['class'] ?? 'Economy');
-$factor = ($fare_info['factor'] ?? 1);
-$source = ($fare_info['source'] ?? 'fallback');
-$currency_symbol = '₹';
+// -----------------------------------------------------------------
+// GET FINAL FARE (dynamic_fare → fare → flight_price → fallback)
+// -----------------------------------------------------------------
+function get_final_fare($conn, $flight, $date, $leg_no, $seat_class_id) {
+
+    // 1) Dynamic Fare
+    $q = $conn->prepare("
+        SELECT final_fare, base_fare, demand_factor
+        FROM dynamic_fare
+        WHERE flight_number=? AND travel_date=?
+        LIMIT 1
+    ");
+    $q->bind_param("ss", $flight, $date);
+    $q->execute();
+    $dyn = $q->get_result()->fetch_assoc();
+    $q->close();
+
+    if ($dyn) {
+        $amt = $dyn['final_fare'] ?: $dyn['base_fare'];
+        return [
+            'amount' => (float)$amt,
+            'source' => 'dynamic_fare'
+        ];
+    }
+
+    // 2) Fare table (CORRECT Base_price)
+    $q = $conn->prepare("
+        SELECT Base_price
+        FROM fare
+        WHERE Flight_number=? AND (Leg_no=? OR Leg_no IS NULL) AND Seat_class_id=?
+        ORDER BY fare_id DESC
+        LIMIT 1
+    ");
+    $q->bind_param("sii", $flight, $leg_no, $seat_class_id);
+    $q->execute();
+    $fare = $q->get_result()->fetch_assoc();
+    $q->close();
+
+    if ($fare) {
+        return [
+            'amount' => (float)$fare['Base_price'],
+            'source' => 'fare'
+        ];
+    }
+
+    // 3) flight_price fallback
+    $q = $conn->prepare("SELECT price FROM flight_price WHERE Flight_number=? LIMIT 1");
+    $q->bind_param("s", $flight);
+    $q->execute();
+    $fp = $q->get_result()->fetch_assoc();
+    $q->close();
+
+    if ($fp) {
+        return [
+            'amount' => (float)$fp['price'],
+            'source' => 'flight_price'
+        ];
+    }
+
+    // DEFAULT
+    return [
+        'amount' => 2500.00,
+        'source' => 'default'
+    ];
+}
+
+$fare_info = get_final_fare($conn, $flight, $travel_date, $leg_no, $seat_class_id);
+
+$amount = $fare_info['amount'];
+$source = $fare_info['source'];
 
 ?>
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <title>Payment — <?= e($flight) ?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body style="background:linear-gradient(to bottom,#e6f8ff,#fff);font-family:Inter,Arial;padding:36px;">
+
+<body style="background:#eef7ff; padding:40px; font-family:Poppins">
+
 <div class="container" style="max-width:720px;">
-  <div class="card p-4 shadow-sm">
-    <h4>💳 Payment — <?= e($flight) ?></h4>
-    <p class="text-muted mb-1">Travel Date: <strong><?= e($date) ?></strong></p>
-    <p class="mb-1"><strong>Seat:</strong> <?= e($seat_no) ?> — <strong>Leg:</strong> <?= e($leg_no) ?></p>
-    <p class="mb-1"><strong>Seat class:</strong> <?= e($seat_class) ?></p>
-    <p class="mb-1"><strong>Fare:</strong> <?= fmt_currency($final_amount, $currency_symbol) ?> <small class="text-muted"><?= e($source) ?></small></p>
-    <h3 class="mt-3"><?= fmt_currency($final_amount, $currency_symbol) ?></h3>
+<div class="card shadow p-4">
 
-    <form method="POST" action="verify_payment.php" style="margin-top:18px;">
-      <input type="hidden" name="reservation_id" value="<?= e($res_id) ?>">
-      <input type="hidden" name="flight_number" value="<?= e($flight) ?>">
-      <input type="hidden" name="leg" value="<?= e($leg_no) ?>">
-      <input type="hidden" name="date" value="<?= e($date) ?>">
-      <input type="hidden" name="seat" value="<?= e($seat_no) ?>">
-      <input type="hidden" name="amount" value="<?= number_format($final_amount,2,'.','') ?>">
-      <!-- Optional: method selection -->
-      <div class="mb-3">
-        <label class="form-label">Payment method</label>
-        <select name="method" class="form-select" required>
-          <option value="card">Card</option>
-          <option value="upi">UPI</option>
+    <h3>💳 Payment — <?= e($flight) ?></h3>
+
+    <p class="text-muted">Travel Date: <b><?= e($travel_date) ?></b></p>
+    <p>Seat: <b><?= e($seat_no) ?></b> • Leg <b><?= e($leg_no) ?></b></p>
+
+    <p>Fare Source: <b><?= e($source) ?></b></p>
+
+    <h2 class="mt-3 mb-3"><?= money($amount) ?></h2>
+
+    <!-- Payment form -->
+    <form action="verify_payment.php" method="POST">
+
+        <input type="hidden" name="reservation_id" value="<?= e($res_id) ?>">
+        <input type="hidden" name="flight_number" value="<?= e($flight) ?>">
+        <input type="hidden" name="date" value="<?= e($travel_date) ?>">
+        <input type="hidden" name="leg" value="<?= e($leg_no) ?>">
+        <input type="hidden" name="seat" value="<?= e($seat_no) ?>">
+        <input type="hidden" name="amount" value="<?= number_format($amount,2,'.','') ?>">
+
+        <label class="form-label">Payment Method</label>
+        <select name="method" class="form-select mb-3" required>
+            <option value="card">Card</option>
+            <option value="upi">UPI</option>
         </select>
-      </div>
 
-      <button type="submit" class="btn btn-primary w-100">Pay Now ✈️</button>
+        <button class="btn btn-primary w-100">Pay Now</button>
+
     </form>
 
-    <div class="mt-3 text-muted small">
-      If price looks wrong: check <code>dynamic_fare</code>, <code>fare</code>, <code>flight_price</code>.
+    <div class="mt-3 small text-muted">
+        If the price is incorrect, check: <code>dynamic_fare</code>, <code>fare</code>, <code>flight_price</code>.
     </div>
-  </div>
+
 </div>
+</div>
+
 </body>
 </html>

@@ -13,13 +13,13 @@ session_start();
 <style>
 /* ===== Background / Clouds / Plane (animated) ===== */
 html,body{height:100%;margin:0;padding:0;font-family:'Poppins',sans-serif;background:linear-gradient(to bottom,#a1c4fd,#c2e9fb);overflow-x:hidden}
-.cloud-layer{position:absolute;width:250%;height:150%;background:url('images/cloud.png') repeat-x;background-size:contain;opacity:.45;top:0;left:-50%;animation:moveClouds linear infinite;z-index:1}
+/* .cloud-layer{position:absolute;width:250%;height:150%;background:url('images/cloud.png') repeat-x;background-size:contain;opacity:.45;top:0;left:-50%;animation:moveClouds linear infinite;z-index:1} */
 .cloud-layer:nth-child(1){animation-duration:150s;top:5%;opacity:.6}
 .cloud-layer:nth-child(2){animation-duration:180s;top:40%;opacity:.5}
 .cloud-layer:nth-child(3){animation-duration:210s;top:75%;opacity:.4}
-@keyframes moveClouds{from{background-position-x:0}to{background-position-x:10000px}}
+/* @keyframes moveClouds{from{background-position-x:0}to{background-position-x:10000px}}
 .plane{position:absolute;width:1800px;height:auto;top:0;left:-500px;opacity:.85;z-index:0;filter:drop-shadow(0 10px 15px rgba(0,0,0,.25));animation:flyInsideClouds 55s ease-in-out infinite}
-@keyframes flyInsideClouds{0%{transform:translate(0,0) rotate(6deg)}50%{transform:translate(110vw,-8vh) rotate(-4deg)}100%{transform:translate(-200px,6vh) rotate(6deg)}}
+@keyframes flyInsideClouds{0%{transform:translate(0,0) rotate(6deg)}50%{transform:translate(110vw,-8vh) rotate(-4deg)}100%{transform:translate(-200px,6vh) rotate(6deg)}} */
 
 /* ===== Glass box ===== */
 .glass-box{position:relative;z-index:5;background:rgba(255,255,255,.15);backdrop-filter:blur(10px);border-radius:18px;box-shadow:0 6px 25px rgba(0,0,0,.2);padding:30px;width:90%;max-width:1200px;margin:110px auto;color:#0d47a1}
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded",function(){
 <div class="cloud-layer"></div>
 <div class="cloud-layer"></div>
 <div class="cloud-layer"></div>
-<img src="images/airplane.png" alt="airplane" class="plane">
+<!-- <img src="images/airplane.png" alt="airplane" class="plane"> -->
 
 <div class="glass-box">
   <h2>🧮 SQL Query Explorer — Predefined & Manual (SELECT-only)</h2>

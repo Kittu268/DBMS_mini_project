@@ -1,102 +1,110 @@
 <?php
-// ======================================
-// AVAILABLE FLIGHTS — FINAL CLEAN VERSION
-// ======================================
-
 session_start();
 include 'db.php';
 include 'header.php';
 
-// User login check
 if (!isset($_SESSION['email'])) {
     header("Location: login.php");
     exit();
 }
 
-// Escape helper
 function esc($v) { return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8'); }
 
-// ---------------------------
-// LOAD PRICES
-// ---------------------------
-$priceMap = [];
-$pq = $conn->query("SELECT Flight_number, price FROM flight_price");
-while ($r = $pq->fetch_assoc()) {
-    $priceMap[$r['Flight_number']] = $r['price'];
-}
-
-
-// ---------------------------
-// BASE QUERY
-// ---------------------------
+// =======================================================
+// NEW CLEAN QUERY (NO DUPLICATES, MULTI-LEG SUPPORT)
+// =======================================================
 $sql = "
-    SELECT 
-        li.Flight_number,
-        li.Leg_no,
-        li.Date,
-        li.Departure_time,
-        li.Arrival_time,
-        li.Departure_airport_code,
-        li.Arrival_airport_code,
-        li.Airplane_id,
-        f.Airline,
+SELECT
+    li.Flight_number,
+    MIN(li.Leg_no) AS first_leg,
+    MAX(li.Leg_no) AS last_leg,
+    li.Date,
+    MIN(li.Departure_time) AS Departure_time,
+    MAX(li.Arrival_time) AS Arrival_time,
 
-        (SELECT COUNT(*) FROM seat s WHERE s.Airplane_id = li.Airplane_id) AS total_seats,
+    -- Route Display (BLR→DEL | DEL→AMD)
+    GROUP_CONCAT(
+        CONCAT(li.Departure_airport_code,'→',li.Arrival_airport_code)
+        ORDER BY li.Leg_no
+        SEPARATOR ' | '
+    ) AS route_display,
 
-        (SELECT COUNT(*) 
-         FROM reservation r
-         WHERE r.Flight_number = li.Flight_number
-           AND r.Leg_no = li.Leg_no
-           AND r.Date = li.Date
-        ) AS booked_seats
+    f.Airline,
+    li.Airplane_id,
 
-    FROM leg_instance li
-    JOIN flight f ON li.Flight_number = f.Flight_number
-    WHERE 1
+    -- Total seats for airplane
+    (SELECT COUNT(*) FROM seat s WHERE s.Airplane_id = li.Airplane_id) AS total_seats,
+
+    -- Seats booked (all legs)
+    (SELECT COUNT(*) 
+     FROM reservation r
+     WHERE r.Flight_number = li.Flight_number
+       AND r.Date = li.Date
+    ) AS booked_seats,
+
+    -- PRICE (uses first leg's fare)
+    (
+        SELECT Base_price 
+        FROM fare fa
+        WHERE fa.Flight_number = li.Flight_number
+          AND fa.Leg_no = MIN(li.Leg_no)
+          AND fa.Seat_class_id = 1
+        LIMIT 1
+    ) AS price
+
+FROM leg_instance li
+JOIN flight f ON li.Flight_number = f.Flight_number
+WHERE 1
 ";
 
+// ---------------- FILTERS -----------------
 $types = "";
 $params = [];
 
-// Apply filters
 if (!empty($_GET['from'])) {
     $sql .= " AND li.Departure_airport_code = ? ";
     $types .= "s"; $params[] = $_GET['from'];
 }
+
 if (!empty($_GET['to'])) {
     $sql .= " AND li.Arrival_airport_code = ? ";
     $types .= "s"; $params[] = $_GET['to'];
 }
+
 if (!empty($_GET['date'])) {
     $sql .= " AND li.Date = ? ";
     $types .= "s"; $params[] = $_GET['date'];
 }
+
 if (!empty($_GET['airline'])) {
     $sql .= " AND f.Airline = ? ";
     $types .= "s"; $params[] = $_GET['airline'];
 }
+
 if (!empty($_GET['price'])) {
-    $sql .= " AND li.Flight_number IN 
-        (SELECT Flight_number FROM flight_price WHERE price <= ?) ";
+    $sql .= " HAVING price <= ? ";
     $types .= "i"; $params[] = $_GET['price'];
 }
 
-$sql .= " ORDER BY li.Date ASC, li.Departure_time ASC";
+$sql .= "
+GROUP BY li.Flight_number, li.Date
+ORDER BY li.Date ASC, Departure_time ASC
+";
 
 $stmt = $conn->prepare($sql);
+
 if (!empty($params)) {
     $stmt->bind_param($types, ...$params);
 }
+
 $stmt->execute();
 $res = $stmt->get_result();
-
 ?>
+
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
 <title>✈️ Available Flights</title>
-
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
@@ -116,7 +124,6 @@ body {
     background: linear-gradient(90deg,#1e3c72,#2a5298);
     color:white;
 }
-.btn-book:hover { transform: scale(1.05); }
 </style>
 
 </head>
@@ -136,8 +143,8 @@ body {
         <select name="from" class="form-select">
             <option value="">Any</option>
             <?php
-            $a = $conn->query("SELECT Airport_code, City FROM airport ORDER BY Airport_code");
-            while ($x = $a->fetch_assoc()):
+            $air = $conn->query("SELECT Airport_code, City FROM airport ORDER BY Airport_code");
+            while ($x = $air->fetch_assoc()):
                 $sel = ($_GET['from'] ?? '') == $x['Airport_code'] ? 'selected' : '';
             ?>
                 <option value="<?= esc($x['Airport_code']) ?>" <?= $sel ?>>
@@ -153,8 +160,8 @@ body {
         <select name="to" class="form-select">
             <option value="">Any</option>
             <?php
-            $a->data_seek(0);
-            while ($x = $a->fetch_assoc()):
+            $air->data_seek(0);
+            while ($x = $air->fetch_assoc()):
                 $sel = ($_GET['to'] ?? '') == $x['Airport_code'] ? 'selected' : '';
             ?>
                 <option value="<?= esc($x['Airport_code']) ?>" <?= $sel ?>>
@@ -171,14 +178,14 @@ body {
             value="<?= esc($_GET['date'] ?? '') ?>">
     </div>
 
-    <!-- Airline -->
+    <!-- AIRLINE -->
     <div class="col-md-2">
         <label>Airline</label>
         <select name="airline" class="form-select">
             <option value="">Any</option>
             <?php
-            $air = $conn->query("SELECT DISTINCT Airline FROM flight ORDER BY Airline");
-            while ($x = $air->fetch_assoc()):
+            $al = $conn->query("SELECT DISTINCT Airline FROM flight ORDER BY Airline");
+            while ($x = $al->fetch_assoc()):
                 $sel = ($_GET['airline'] ?? '') == $x['Airline'] ? 'selected' : '';
             ?>
                 <option value="<?= esc($x['Airline']) ?>" <?= $sel ?>>
@@ -193,76 +200,61 @@ body {
         <label>Max Price</label>
         <select name="price" class="form-select">
             <option value="">Any</option>
-            <?php
-            foreach ([2000,3000,4000,5000,6000,10000] as $p):
-                $sel = ($_GET['price'] ?? '') == $p ? 'selected' : '';
-            ?>
-                <option value="<?= $p ?>" <?= $sel ?>>₹<?= number_format($p) ?></option>
+            <?php foreach ([2000,3000,4000,5000,6000,10000] as $p): ?>
+                <option value="<?= $p ?>" <?= (($_GET['price'] ?? '') == $p) ? 'selected' : '' ?>>
+                    ₹<?= number_format($p) ?>
+                </option>
             <?php endforeach; ?>
         </select>
     </div>
 
-    <div class="col-md-12 text-end">
+    <div class="col-12 text-end mt-2">
         <button class="btn btn-primary">🔍 Search</button>
         <a href="available_flights.php" class="btn btn-secondary">♻ Reset</a>
     </div>
 
 </form>
 
-
-<!-- TABLE -->
 <table class="table table-bordered table-striped text-center">
-    <thead class="table-primary">
-    <tr>
-        <th>Flight</th>
-        <th>Airline</th>
-        <th>From</th>
-        <th>To</th>
-        <th>Date</th>
-        <th>Dep</th>
-        <th>Arr</th>
-        <th>Airplane</th>
-        <th>Total</th>
-        <th>Booked</th>
-        <th>Remaining</th>
-        <th>Price</th>
-        <th>Book</th>
-    </tr>
-    </thead>
-    <tbody>
+<thead class="table-primary">
+<tr>
+    <th>Flight</th>
+    <th>Airline</th>
+    <th>Route</th>
+    <th>Date</th>
+    <th>Dep</th>
+    <th>Arr</th>
+    <th>Seats</th>
+    <th>Remaining</th>
+    <th>Price</th>
+    <th>Book</th>
+</tr>
+</thead>
 
+<tbody>
 <?php if ($res->num_rows > 0): ?>
 <?php while ($row = $res->fetch_assoc()): 
 
-    $total   = intval($row['total_seats']);
-    $booked  = intval($row['booked_seats']);
-    $remain  = max(0, $total - $booked);
-
-    $price   = $priceMap[$row['Flight_number']] ?? 0;
+    $remain = max(0, $row['total_seats'] - $row['booked_seats']);
+    $price  = intval($row['price']);
 
 ?>
 <tr>
     <td><?= esc($row['Flight_number']) ?></td>
     <td><?= esc($row['Airline']) ?></td>
-    <td><?= esc($row['Departure_airport_code']) ?></td>
-    <td><?= esc($row['Arrival_airport_code']) ?></td>
+    <td><?= esc($row['route_display']) ?></td>
     <td><?= esc($row['Date']) ?></td>
     <td><?= esc($row['Departure_time']) ?></td>
     <td><?= esc($row['Arrival_time']) ?></td>
-
-    <td><?= esc($row['Airplane_id'] ?: 'N/A') ?></td>
-
-    <td><?= $total ?></td>
-    <td><?= $booked ?></td>
-    <td style="font-weight:bold;color:<?= ($remain<=5?'red':'green') ?>">
+    <td><?= esc($row['total_seats']) ?></td>
+    <td style="color:<?= ($remain<=5?'red':'green') ?>;font-weight:bold;">
         <?= $remain ?>
     </td>
-
     <td>₹<?= number_format($price) ?></td>
 
     <td>
-        <?php if ($remain > 0 && $row['Airplane_id']): ?>
-            <a href="make_reservation.php?flight=<?= urlencode($row['Flight_number']) ?>&leg=<?= urlencode($row['Leg_no']) ?>&date=<?= urlencode($row['Date']) ?>"
+        <?php if ($remain > 0): ?>
+            <a href="make_reservation.php?flight=<?= urlencode($row['Flight_number']) ?>&leg=<?= urlencode($row['first_leg']) ?>&date=<?= urlencode($row['Date']) ?>" 
                class="btn btn-book btn-sm">Book</a>
         <?php else: ?>
             <button class="btn btn-secondary btn-sm" disabled>Full</button>
@@ -272,11 +264,8 @@ body {
 
 <?php endwhile; ?>
 <?php else: ?>
-
-<tr><td colspan="13" class="text-danger fw-bold">No flights found.</td></tr>
-
+<tr><td colspan="10" class="text-danger fw-bold">No flights found.</td></tr>
 <?php endif; ?>
-
 </tbody>
 </table>
 

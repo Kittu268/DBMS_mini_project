@@ -1,5 +1,8 @@
--- airline.sql
+-- airline_updated.sql
 -- Rebuild Airline Reservation DB (DDL + sample data)
+-- This file is an updated, fixed and extended version of your original airline.sql.
+-- Fixes syntax errors, adds cancellations and revenue_log tables, and corrects flight_price seeding query.
+
 SET FOREIGN_KEY_CHECKS = 0;
 DROP DATABASE IF EXISTS airline;
 CREATE DATABASE airline CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -118,6 +121,10 @@ CREATE TABLE reservation (
   Cphone VARCHAR(50) DEFAULT NULL,
   Email VARCHAR(255) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  reservation_created_at TIMESTAMP NULL,
+  cancellation_status VARCHAR(50) DEFAULT NULL,
+  fare DECIMAL(10,2) DEFAULT 0.00,
+  Airplane_class VARCHAR(50) DEFAULT NULL,
   FOREIGN KEY (Flight_number) REFERENCES flight(Flight_number) ON UPDATE CASCADE ON DELETE CASCADE,
   FOREIGN KEY (Airplane_id) REFERENCES airplane(Airplane_id) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -143,6 +150,12 @@ CREATE TABLE dynamic_fare (
   Date DATE NOT NULL,
   multiplier DECIMAL(5,2) DEFAULT 1.00,
   reason VARCHAR(255),
+  base_fare DECIMAL(10,2) DEFAULT NULL,
+  final_fare DECIMAL(10,2) DEFAULT NULL,
+  demand_factor DECIMAL(5,2) DEFAULT NULL,
+  seat_class VARCHAR(50) DEFAULT NULL,
+  flight_number VARCHAR(30) DEFAULT NULL,
+  travel_date DATE DEFAULT NULL,
   FOREIGN KEY (fare_id) REFERENCES fare(fare_id) ON UPDATE CASCADE ON DELETE CASCADE,
   UNIQUE (fare_id, Date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -173,6 +186,34 @@ CREATE TABLE payment_price (
   Currency VARCHAR(8) DEFAULT 'INR',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (fare_id) REFERENCES fare(fare_id) ON UPDATE CASCADE ON DELETE SET NULL,
+  FOREIGN KEY (reservation_id) REFERENCES reservation(id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 15) flight_price (pre-calculated quick lookup)
+CREATE TABLE IF NOT EXISTS flight_price (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  Flight_number VARCHAR(30) NOT NULL,
+  price DECIMAL(10,2) NOT NULL DEFAULT 0.00
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 16) cancellations (refund tracking)
+CREATE TABLE IF NOT EXISTS cancellations (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  reservation_id INT NOT NULL,
+  refund_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  refund_pct DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+  days_left INT NOT NULL DEFAULT 0,
+  cancelled_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (reservation_id) REFERENCES reservation(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 17) revenue_log (simple accounting ledger)
+CREATE TABLE IF NOT EXISTS revenue_log (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  reservation_id INT DEFAULT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  type VARCHAR(32) NOT NULL, -- 'fare' or 'refund' or others
+  created_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (reservation_id) REFERENCES reservation(id) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -239,12 +280,12 @@ INSERT INTO fare (Flight_number, Leg_no, Seat_class_id, Base_price, Currency, va
 ('AI101',1,1,3500.00,'INR',CURDATE(),DATE_ADD(CURDATE(), INTERVAL 180 DAY)),
 ('SJ201',1,1,1200.00,'INR',CURDATE(),DATE_ADD(CURDATE(), INTERVAL 180 DAY));
 
-INSERT INTO dynamic_fare (fare_id, Date, multiplier, reason) VALUES
-(1, DATE_ADD(CURDATE(), INTERVAL 2 DAY), 1.15, 'Weekend demand');
+INSERT INTO dynamic_fare (fare_id, Date, multiplier, reason, base_fare, final_fare) VALUES
+(1, DATE_ADD(CURDATE(), INTERVAL 2 DAY), 1.15, 'Weekend demand', 3500.00, ROUND(3500.00 * 1.15,2));
 
 -- Sample reservation (no payment yet)
-INSERT INTO reservation (Flight_number, Leg_no, Date, Airplane_id, Seat_no, Customer_name, Cphone, Email) VALUES
-('AI101',1,DATE_ADD(CURDATE(), INTERVAL 2 DAY),'A320-001','14A','Test User','9999999999','testuser@example.com');
+INSERT INTO reservation (Flight_number, Leg_no, Date, Airplane_id, Seat_no, Customer_name, Cphone, Email, reservation_created_at, fare, Airplane_class) VALUES
+('AI101',1,DATE_ADD(CURDATE(), INTERVAL 2 DAY),'A320-001','14A','Test User','9999999999','testuser@example.com', NOW(), 3500.00, 'Economy');
 
 -- Sample payment_price (snapshot)
 INSERT INTO payment_price (fare_id, reservation_id, base_amount, taxes, fee, Currency) VALUES
@@ -254,29 +295,19 @@ INSERT INTO payment_price (fare_id, reservation_id, base_amount, taxes, fee, Cur
 INSERT INTO payments (reservation_id, Email, amount, currency, status, provider, transaction_ref) VALUES
 (1, 'testuser@example.com', 3800.00, 'INR', 'completed', 'test_gateway', 'TXN123456');
 
--- Final housekeeping
-ANALYZE TABLE flight, reservation, leg_instance, users;
--- 1) alias column for signup.php (if you prefer leaving PHP as-is)
-ALTER TABLE users ADD COLUMN `name` VARCHAR(100) NULL AFTER username;
-
--- 2) add reservation_created_at if some PHP refers to it
-ALTER TABLE reservation ADD COLUMN reservation_created_at TIMESTAMP NULL AFTER created_at;
-
--- 3) create flight_price table (if available_flights.php expects it)
-CREATE TABLE IF NOT EXISTS flight_price (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  Flight_number VARCHAR(30) NOT NULL,
-  price DECIMAL(10,2) NOT NULL DEFAULT 0.00
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- optionally seed flight_price from fare base prices
+-- Seed flight_price from fare base prices (corrected query)
 INSERT INTO flight_price (Flight_number, price)
-SELECT DISTINCT Flight_number, ROUND(MIN(Base_price),2)
+SELECT Flight_number, ROUND(MIN(Base_price),2) as min_price
 FROM fare
 GROUP BY Flight_number
 ON DUPLICATE KEY UPDATE price = VALUES(price);
 
--- 4) add reservation_id alias (if some PHP expects reservation_id key on result arrays)
--- (This is not a DB change — PHP-side change is better. If you must add, you can create a VIEW:)
+-- Final housekeeping
+ANALYZE TABLE flight, reservation, leg_instance, users;
+
+-- Optional: add `name` column to users if not exists (safe alter)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS `name` VARCHAR(100) NULL AFTER username;
+
+-- Create view to alias reservation id if needed by old PHP files
 CREATE OR REPLACE VIEW reservation_view AS
 SELECT id AS reservation_id, * FROM reservation;

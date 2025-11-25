@@ -1,0 +1,12 @@
+[
+    {
+        "time": 1764098604,
+        "role": "user",
+        "text": "show my reservation"
+    },
+    {
+        "time": 1764098604,
+        "role": "assistant",
+        "text": "Displayed your reservations."
+    }
+]

@@ -14,7 +14,7 @@
 }
 
 body {
-    animation: skyGradient 100s infinite ease-in-out;
+    animation: skyGradient 1000s infinite ease-in-out;
     overflow-x: hidden;
     margin: 0;
     padding: 0;
@@ -28,56 +28,45 @@ body {
 .cloud-layer {
     position: fixed;
     width: 300%;
-    height: 600px;
-    left: -100%;
-    top: 0;
+    height: 800px;
+    left: -59%;
+    top: -10%;
+    bottom: -10%;
 
-    background: url('images/cloud.png') repeat-x;
+    /* background: url('images/cloud.png') repeat-x; */
     background-size: contain;
 
-    z-index: -10; 
-    opacity: 0.18;
+    z-index: -5; 
+    opacity: 0.12;
 
-    animation: moveClouds 150s linear infinite;
+    animation: moveClouds 1500s linear infinite;
 }
 
-.cloud-layer:nth-child(2) {
-    top: 40%;
-    opacity: 0.20;
-    animation-duration: 190s;
-}
-
-.cloud-layer:nth-child(3) {
-    top: 70%;
-    opacity: 0.15;
-    animation-duration: 220s;
-}
-
-@keyframes moveClouds {
+/* @keyframes moveClouds {
     0%   { transform: translateX(0); }
+    50%  { transform: translateX(50%); }
     100% { transform: translateX(100%); }
-}
+} */
 
 /* ================================
    AIRPLANE ANIMATION
 ================================ */
 .airplane {
     position: fixed;
-    width: 350px;
-    top: 20%;
-    left: -200px;
+    width: 100%;
+    height: 800px;
+    top: -20px;
+    left: -20px;
+    /* background: url('images/airplane.png') repeat-x; */
+    opacity: 0.50;
+    z-index: -2;
 
-    opacity: 0.12;
-    z-index: -20;
+    animation: flyPlane 455s linear infinite;
+    pointer-events: none;
 
-    animation: flyPlane 45s linear infinite;
 }
 
-@keyframes flyPlane {
-    0%   { transform: translateX(0) rotate(2deg); }
-    50%  { transform: translateX(120vw) rotate(-3deg); }
-    100% { transform: translateX(0) rotate(2deg); }
-}
+
 </style>
 
 <!-- Background Layers -->
@@ -85,4 +74,4 @@ body {
 <div class="cloud-layer"></div>
 <div class="cloud-layer"></div>
 
-<img src="images/airplane.png" class="airplane">
+<!-- <img src="images/airplane.png" class="airplane"> -->

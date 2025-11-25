@@ -63,10 +63,10 @@ $_SESSION['is_admin'] = ($row['email'] === 'admin@airline.com');
     .cloud:nth-child(2) { top: 40%; left: -400px; width: 280px; animation-duration: 90s; animation-delay: 10s; }
     .cloud:nth-child(3) { top: 70%; left: -350px; width: 230px; animation-duration: 100s; animation-delay: 25s; }
 
-    @keyframes moveClouds {
+    /* @keyframes moveClouds {
       from { transform: translateX(0); }
       to { transform: translateX(130vw); }
-    }
+    } */
 
     /* ✈️ Plane Animation */
     .plane {
@@ -81,11 +81,11 @@ $_SESSION['is_admin'] = ($row['email'] === 'admin@airline.com');
       animation: flyInClouds 400s ease-in-out infinite;
     }
 
-    @keyframes flyInClouds {
+    /* @keyframes flyInClouds {
       0% { transform: translate(0, 0) rotate(3deg); opacity: 0.9; }
       50% { transform: translate(110vw, -6vh) rotate(-5deg); opacity: 0.7; }
       100% { transform: translate(220vw, 5vh) rotate(4deg); opacity: 0.9; }
-    }
+    } */
 
     /* 🌟 Login Card */
     .login-card {
@@ -114,10 +114,10 @@ $_SESSION['is_admin'] = ($row['email'] === 'admin@airline.com');
 </head>
 <body>
   <!-- ☁️ Animated Background -->
+  <!-- <img src="images/cloud.png" alt="cloud" class="cloud">
   <img src="images/cloud.png" alt="cloud" class="cloud">
   <img src="images/cloud.png" alt="cloud" class="cloud">
-  <img src="images/cloud.png" alt="cloud" class="cloud">
-  <img src="images/airplane.png" alt="airplane" class="plane">
+  <img src="images/airplane.png" alt="airplane" class="plane"> -->
 
   <!-- 🌤️ Centered Login Form -->
   <div class="d-flex justify-content-center align-items-center vh-100">

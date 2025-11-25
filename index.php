@@ -34,10 +34,10 @@ include 'header.php';
         animation: fadeIn 1.4s ease;
     }
 
-    @keyframes fadeIn {
+    /* @keyframes fadeIn {
       from { opacity: 0; transform: translateY(40px); }
       to   { opacity: 1; transform: translateY(0); }
-    }
+    } */
 
     h1 {
       color: #0d47a1;

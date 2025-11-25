@@ -23,5 +23,100 @@
         "time": 1763648140,
         "role": "assistant",
         "text": "Suggested alternate dates for 6E404."
+    },
+    {
+        "time": 1764001685,
+        "role": "user",
+        "text": "hi"
+    },
+    {
+        "t": 1764002165,
+        "r": "user",
+        "m": "hi"
+    },
+    {
+        "time": 1764002187,
+        "role": "user",
+        "text": "ho"
+    },
+    {
+        "time": 1764002212,
+        "role": "user",
+        "text": "hi"
+    },
+    {
+        "time": 1764002218,
+        "role": "user",
+        "text": "hi"
+    },
+    {
+        "time": 1764002224,
+        "role": "user",
+        "text": "ho"
+    },
+    {
+        "time": 1764002249,
+        "role": "user",
+        "text": "book"
+    },
+    {
+        "time": 1764002249,
+        "role": "assistant",
+        "text": "Suggested alternate dates for AI101."
+    },
+    {
+        "time": 1764038416,
+        "role": "user",
+        "text": "hi"
+    },
+    {
+        "time": 1764038422,
+        "role": "user",
+        "text": "ho"
+    },
+    {
+        "time": 1764038428,
+        "role": "user",
+        "text": "book"
+    },
+    {
+        "time": 1764038428,
+        "role": "assistant",
+        "text": "Suggested alternate dates for AI101."
+    },
+    {
+        "time": 1764038438,
+        "role": "user",
+        "text": "reservations"
+    },
+    {
+        "time": 1764038438,
+        "role": "assistant",
+        "text": "Asked for clarification."
+    },
+    {
+        "time": 1764038451,
+        "role": "user",
+        "text": "'Show my bookings"
+    },
+    {
+        "time": 1764038451,
+        "role": "assistant",
+        "text": "Displayed your reservations."
+    },
+    {
+        "time": 1764095341,
+        "role": "user",
+        "text": "hi"
+    },
+    {
+        "time": 1764095355,
+        "role": "user",
+        "text": "show my  bookings"
+    },
+    {
+        "time": 1764095356,
+        "role": "assistant",
+        "text": "Displayed your reservations."
     }
 ]
